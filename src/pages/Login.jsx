@@ -36,11 +36,11 @@ export default function Login() {
     {/* Contenedor principal: login + lado izquierdo */}
     <div className="flex flex-1">
       {/* Lado izquierdo: rosa pastel (oculto en móviles) */}
-      <div className="hidden md:flex w-7/12 items-center justify-center">
+      <div className="hidden md:flex w-7/12">
         <img
           src={Slide1}
           alt="Slide 1"
-          className="max-w-[100%] max-h-[90%] object-cover rounded-3xl shadow-lg"
+          className="w-full h-full object-cover"
         />
       </div>
 
