@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Logo from "../assets/images/logo_tele.webp";
 import Slide1 from "../assets/images/slide1.webp";
+import Slide2 from "../assets/images/slide2.webp";
+import Slide3 from "../assets/images/slide3.webp";
+import Slide4 from "../assets/images/slide4.webp";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -16,6 +19,18 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  // --- Slideshow con fade ---
+  const slides = [Slide1, Slide2, Slide3, Slide4];
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000); // Cambia cada 3 segundos
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handleLogin = (e) => {
     e.preventDefault();
 
@@ -28,10 +43,8 @@ export default function Login() {
       return;
     }
 
-    // Guardar usuario en localStorage para rutas protegidas
     localStorage.setItem("user", JSON.stringify(user));
 
-    // Redirigir según rol
     if (user.role === "admin") navigate("/dashboard-admin");
     if (user.role === "cliente") navigate("/dashboard-cliente");
     if (user.role === "empresa") navigate("/dashboard-empresa");
@@ -39,16 +52,21 @@ export default function Login() {
 
   return (
     <div className="flex flex-col min-h-screen">
-
       <div className="flex flex-1">
 
-        {/* Lado izquierdo: imagen */}
-        <div className="hidden md:flex w-1/2">
-          <img
-            src={Slide1}
-            alt="Slide 1"
-            className="w-full h-full object-cover"
-          />
+        {/* Lado izquierdo: slideshow con fade */}
+        <div className="hidden md:flex w-1/2 relative overflow-hidden">
+          {slides.map((slide, index) => (
+            <img
+              key={index}
+              src={slide}
+              alt={`Slide ${index + 1}`}
+              className={`
+                absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-5000
+                ${index === currentSlide ? "opacity-100" : "opacity-0"}
+              `}
+            />
+          ))}
         </div>
 
         {/* Lado derecho: formulario */}

@@ -3,6 +3,9 @@ import Login from "./pages/Login";
 import DashboardAdmin from "./pages/DashboardAdmin";
 import DashboardCliente from "./pages/DashboardCliente";
 import DashboardEmpresa from "./pages/DashboardEmpresa";
+import Empresa from "./pages/Empresas";
+import Usuarios from "./pages/Usuarios";
+
 
 // Ruta privada según rol
 function PrivateRoute({ children, role }) {
@@ -59,7 +62,22 @@ function App() {
             </PrivateRoute>
           } 
         />
-
+        <Route 
+        path="/empresas" 
+        element={
+          <PrivateRoute role="admin">
+            <Empresa />
+          </PrivateRoute>
+        } 
+        />
+        <Route 
+          path="/usuarios" 
+          element={
+            <PrivateRoute role="admin">
+              <Usuarios />
+            </PrivateRoute>
+          } 
+        />
         {/* Ruta no encontrada */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

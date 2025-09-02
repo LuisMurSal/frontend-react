@@ -1,5 +1,5 @@
 import { useState } from "react"
-import Sidebar from "../components/SidebarAdmin"
+import Sidebar from "../components/Sidebar"
 import { LayoutDashboard, Users, Box, Server, Cpu, Building } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 

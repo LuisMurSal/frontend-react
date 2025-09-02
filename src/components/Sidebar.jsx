@@ -1,17 +1,13 @@
+// src/components/Sidebar.jsx
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { LogOut, ChevronLeft, ChevronRight, Menu, X, Snail, LayoutDashboard, Users, Box, Cpu, Server } from 'lucide-react'
+import { LogOut, ChevronLeft, ChevronRight, Menu, X, LayoutDashboard, Users, Cpu, Server } from 'lucide-react'
 
-export default function Sidebar({ 
-  isCollapsed, 
-  setIsCollapsed, 
-  isOpen, 
-  setIsOpen
-}) {
+export default function Sidebar({ isCollapsed, setIsCollapsed, isOpen, setIsOpen }) {
   const location = useLocation()
   const navigate = useNavigate()
   const [active, setActive] = useState(location.pathname)
-  const [closing, setClosing] = useState(false) 
+  const [closing, setClosing] = useState(false)
 
   useEffect(() => {
     setActive(location.pathname)
@@ -30,14 +26,25 @@ export default function Sidebar({
      flex items-center px-4 py-3 rounded-xl transition-all duration-300 overflow-hidden
      ${isCollapsed ? 'justify-center' : 'space-x-3 justify-start'}`
 
-  // Enlaces fijos del sidebar
-  const links = [
-    { to: '/dashboard-admin', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/empresas', icon: Users, label: 'Empresas' },
-    { to: '/dispositivos', icon: Cpu, label: 'Dispositivos' },
-    { to: '/switches', icon: Server, label: 'Switches' },
-    { to: '/usuarios', icon: Users, label: 'Usuarios' }
+  // Obtenemos el usuario desde localStorage
+  const user = JSON.parse(localStorage.getItem("user"))
+
+  // Todos los links posibles
+  const allLinks = [
+    { 
+      to: user?.role === 'admin' ? '/dashboard-admin' : user?.role === 'empresa' ? '/dashboard-empresa' : '/dashboard-cliente', 
+      icon: LayoutDashboard, 
+      label: 'Dashboard', 
+      roles: ['admin','empresa','cliente'] 
+    },
+    { to: '/empresas', icon: Users, label: 'Empresas', roles: ['admin'] },
+    { to: '/dispositivos', icon: Cpu, label: 'Dispositivos', roles: ['admin','cliente','empresa'] },
+    { to: '/switches', icon: Server, label: 'Switches', roles: ['admin','cliente'] },
+    { to: '/usuarios', icon: Users, label: 'Usuarios', roles: ['admin','empresa'] }
   ]
+
+  // Filtramos según rol
+  const links = allLinks.filter(link => link.roles.includes(user?.role))
 
   return (
     <>
@@ -85,8 +92,8 @@ export default function Sidebar({
             ) : (
               <>
                 <div className="flex items-center space-x-2 mx-auto">
-                  <Snail className="w-6 h-6 text-white" />
-                  <h1 className="text-white font-bold text-2xl cursor-default">Pulso Agrícola</h1>
+                  <img src="/pulagr1.svg" alt="Logo" className="w-8 h-8 object-contain invert" />
+                  <h1 className="text-white font-bold text-xl cursor-default">Pulso Agrícola</h1>
                 </div>
                 <button
                   onClick={() => setIsCollapsed(true)}

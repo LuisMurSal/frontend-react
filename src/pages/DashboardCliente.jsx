@@ -1,5 +1,5 @@
 import { useState } from "react"
-import Sidebar from "../components/SidebarCliente"
+import Sidebar from "../components/Sidebar"
 import { LayoutDashboard, Box } from "lucide-react"
 
 export default function DashboardCliente() {
