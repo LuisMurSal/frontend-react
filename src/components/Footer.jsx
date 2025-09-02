@@ -5,7 +5,7 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-4 flex flex-col items-center">
         {/* Texto centrado */}
         <p className="text-sm text-center">
-          &copy; {new Date().getFullYear()} Tu Empresa. Todos los derechos reservados.
+          &copy; {new Date().getFullYear()} Pulso agricola. Todos los derechos reservados.
         </p>
       </div>
     </footer>
