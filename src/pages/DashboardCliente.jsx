@@ -1,10 +1,8 @@
 import { useState } from "react"
-import Sidebar from "../components/Sidebar"
 import { LayoutDashboard, Box } from "lucide-react"
 
 export default function DashboardCliente() {
-  const [isCollapsed, setIsCollapsed] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
+
 
   // Links específicos del cliente
   const clienteLinks = [
@@ -20,13 +18,6 @@ export default function DashboardCliente() {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <Sidebar 
-        isCollapsed={isCollapsed}
-        setIsCollapsed={setIsCollapsed}
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-        links={clienteLinks}
-      />
 
       <main className="flex-1 p-6 md:ml-64">
         <h1 className="text-3xl font-bold mb-6">Bienvenido, Cliente</h1>

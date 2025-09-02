@@ -1,24 +1,21 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useState } from "react";
+
 import Login from "./pages/Login";
 import DashboardAdmin from "./pages/DashboardAdmin";
 import DashboardCliente from "./pages/DashboardCliente";
 import DashboardEmpresa from "./pages/DashboardEmpresa";
 import Empresa from "./pages/Empresas";
 import Usuarios from "./pages/Usuarios";
-
+import Sidebar from "./components/Sidebar";
 
 // Ruta privada según rol
 function PrivateRoute({ children, role }) {
-  // Ejemplo: guardamos usuario en localStorage al loguearse
   const user = JSON.parse(localStorage.getItem("user")); 
 
-  if (!user) {
-    // Si no hay usuario logueado, redirige a login
-    return <Navigate to="/" />;
-  }
+  if (!user) return <Navigate to="/" />;
 
   if (role && user.role !== role) {
-    // Si el rol no coincide, redirige a su dashboard correspondiente
     switch(user.role) {
       case "admin": return <Navigate to="/dashboard-admin" />;
       case "cliente": return <Navigate to="/dashboard-cliente" />;
@@ -30,19 +27,44 @@ function PrivateRoute({ children, role }) {
   return children;
 }
 
+// Layout que incluye el sidebar
+function ProtectedLayout({ children, isCollapsed, setIsCollapsed, isOpen, setIsOpen }) {
+  return (
+    <div className="flex min-h-screen">
+      <Sidebar
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+      />
+      <main className={`flex-1 transition-all duration-300 ${isCollapsed ? "md:ml-20" : "md:ml-64"}`}>
+        {children}
+      </main>
+    </div>
+  );
+}
+
 function App() {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <BrowserRouter>
       <Routes>
-        {/* Login */}
         <Route path="/" element={<Login />} />
 
-        {/* Dashboards protegidos */}
         <Route 
           path="/dashboard-admin" 
           element={
             <PrivateRoute role="admin">
-              <DashboardAdmin />
+              <ProtectedLayout 
+                isCollapsed={isCollapsed} 
+                setIsCollapsed={setIsCollapsed} 
+                isOpen={isOpen} 
+                setIsOpen={setIsOpen}
+              >
+                <DashboardAdmin />
+              </ProtectedLayout>
             </PrivateRoute>
           } 
         />
@@ -50,7 +72,14 @@ function App() {
           path="/dashboard-cliente" 
           element={
             <PrivateRoute role="cliente">
-              <DashboardCliente />
+              <ProtectedLayout 
+                isCollapsed={isCollapsed} 
+                setIsCollapsed={setIsCollapsed} 
+                isOpen={isOpen} 
+                setIsOpen={setIsOpen}
+              >
+                <DashboardCliente />
+              </ProtectedLayout>
             </PrivateRoute>
           } 
         />
@@ -58,27 +87,47 @@ function App() {
           path="/dashboard-empresa" 
           element={
             <PrivateRoute role="empresa">
-              <DashboardEmpresa />
+              <ProtectedLayout 
+                isCollapsed={isCollapsed} 
+                setIsCollapsed={setIsCollapsed} 
+                isOpen={isOpen} 
+                setIsOpen={setIsOpen}
+              >
+                <DashboardEmpresa />
+              </ProtectedLayout>
             </PrivateRoute>
           } 
         />
         <Route 
-        path="/empresas" 
-        element={
-          <PrivateRoute role="admin">
-            <Empresa />
-          </PrivateRoute>
-        } 
+          path="/empresas" 
+          element={
+            <PrivateRoute role="admin">
+              <ProtectedLayout 
+                isCollapsed={isCollapsed} 
+                setIsCollapsed={setIsCollapsed} 
+                isOpen={isOpen} 
+                setIsOpen={setIsOpen}
+              >
+                <Empresa />
+              </ProtectedLayout>
+            </PrivateRoute>
+          } 
         />
         <Route 
           path="/usuarios" 
           element={
             <PrivateRoute role="admin">
-              <Usuarios />
+              <ProtectedLayout 
+                isCollapsed={isCollapsed} 
+                setIsCollapsed={setIsCollapsed} 
+                isOpen={isOpen} 
+                setIsOpen={setIsOpen}
+              >
+                <Usuarios />
+              </ProtectedLayout>
             </PrivateRoute>
           } 
         />
-        {/* Ruta no encontrada */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>

@@ -1,19 +1,15 @@
 import { useState } from "react"
-import Sidebar from "../components/Sidebar"
 import { LayoutDashboard, Users, Box } from "lucide-react"
 
 export default function DashboardEmpresa() {
-  const [isCollapsed, setIsCollapsed] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
 
-  // Links específicos de la empresa
+  // Links específicos de la empresa (si los necesitas para algún otro componente)
   const empresaLinks = [
     { to: "/dashboard-empresa", icon: LayoutDashboard, label: "Dashboard" },
     { to: "/mis-clientes", icon: Users, label: "Mis Clientes" },
     { to: "/productos", icon: Box, label: "Productos" },
   ]
 
-  // Datos de ejemplo para las cards
   const stats = [
     { label: "Clientes", value: 10, icon: Users, bg: "bg-[#a7c957]" },
     { label: "Productos disponibles", value: 20, icon: Box, bg: "bg-[#6a994e]" },
@@ -22,15 +18,7 @@ export default function DashboardEmpresa() {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <Sidebar 
-        isCollapsed={isCollapsed}
-        setIsCollapsed={setIsCollapsed}
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-        links={empresaLinks}
-      />
-
-      <main className="flex-1 p-6 md:ml-64">
+      <main className="flex-1 p-6">
         <h1 className="text-3xl font-bold mb-6">Bienvenido, Empresa</h1>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

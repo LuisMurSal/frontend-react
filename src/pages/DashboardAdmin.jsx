@@ -1,29 +1,38 @@
-import { useState } from "react"
-import Sidebar from "../components/Sidebar"
-import { LayoutDashboard, Users, Box, Server, Cpu, Building } from "lucide-react"
+// src/pages/DashboardAdmin.jsx
+import { useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import { LayoutDashboard, Users, Cpu, Server, Building } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 export default function DashboardAdmin() {
-  const [isCollapsed, setIsCollapsed] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
+  const navigate = useNavigate()
 
-  // Links del admin
-  const adminLinks = [
-    { to: "/dashboard-admin", icon: LayoutDashboard, label: "Dashboard" },
-    { to: "/usuarios", icon: Users, label: "Usuarios" },
-    { to: "/empresas", icon: Building, label: "Empresas" },
-    { to: "/dispositivos", icon: Cpu, label: "Dispositivos" },
-    { to: "/switches", icon: Server, label: "Switches" },
-  ]
+  // 🔒 Protección: solo admin puede entrar
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"))
+    if (!user) {
+      navigate("/") // no logueado -> login
+    } else if (user.role !== "admin") {
+      switch (user.role) {
+        case "cliente":
+          navigate("/dashboard-cliente")
+          break
+        case "empresa":
+          navigate("/dashboard-empresa")
+          break
+        default:
+          navigate("/")
+      }
+    }
+  }, [navigate])
 
-  // Datos de ejemplo para las estadísticas
+  // Datos de ejemplo
   const stats = [
     { label: "Usuarios Totales", value: 120, icon: Users, bg: "bg-[#a7c957]" },
     { label: "Empresas Totales", value: 45, icon: Building, bg: "bg-[#6a994e]" },
     { label: "Switches Encendidos", value: 32, icon: Server, bg: "bg-[#f2e8cf] text-[#4f772d]" },
   ]
 
-  // Últimos usuarios y empresas agregados
   const ultimosUsuarios = [
     { id: 1, nombre: "Juan Perez", email: "juan@mail.com" },
     { id: 2, nombre: "Ana Gomez", email: "ana@mail.com" },
@@ -39,8 +48,6 @@ export default function DashboardAdmin() {
     { id: 2, nombre: "Controlador 5", tipo: "Switch" },
     { id: 3, nombre: "Cámara 3", tipo: "Cámara" },
   ]
-
-  // Datos de ejemplo para la gráfica de dispositivos activos
   const dispositivosActivos = [
     { hora: "08:00", dispositivos: 12, switches: 5 },
     { hora: "09:00", dispositivos: 18, switches: 7 },
@@ -51,22 +58,13 @@ export default function DashboardAdmin() {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <Sidebar 
-        isCollapsed={isCollapsed}
-        setIsCollapsed={setIsCollapsed}
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-        links={adminLinks}
-      />
-
       {/* Contenido principal */}
-      <main className="flex-1 p-6 md:ml-64">
+      <main className="flex-1 p-6">
         <h1 className="text-3xl font-bold mb-6">Bienvenido, Admin</h1>
 
         {/* Cards de estadísticas */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {stats.map((stat) => {
+          {stats.map(stat => {
             const IconComp = stat.icon
             return (
               <div key={stat.label} className={`flex items-center p-6 rounded-xl shadow-md ${stat.bg}`}>
@@ -80,7 +78,7 @@ export default function DashboardAdmin() {
           })}
         </div>
 
-        {/* Gráfica de dispositivos activos */}
+        {/* Gráfica */}
         <div className="mt-8 bg-white p-4 rounded-xl shadow-md">
           <h2 className="text-xl font-semibold mb-4">Dispositivos Activos / Switches Encendidos</h2>
           <ResponsiveContainer width="100%" height={300}>
@@ -101,19 +99,18 @@ export default function DashboardAdmin() {
             <h2 className="text-xl font-semibold mb-4">Últimos Usuarios</h2>
             <ul className="space-y-2">
               {ultimosUsuarios.map(u => (
-                <li key={u.id} className="border-b pb-1">
+                <li key={u.id} className="border-b pb-1 border-gray-300">
                   <p className="font-medium">{u.nombre}</p>
                   <p className="text-sm text-gray-500">{u.email}</p>
                 </li>
               ))}
             </ul>
           </div>
-
           <div className="bg-white p-4 rounded-xl shadow-md">
             <h2 className="text-xl font-semibold mb-4">Últimas Empresas</h2>
             <ul className="space-y-2">
               {ultimasEmpresas.map(e => (
-                <li key={e.id} className="border-b pb-1">
+                <li key={e.id} className="border-b pb-1 border-gray-300">
                   <p className="font-medium">{e.nombre}</p>
                 </li>
               ))}
@@ -126,7 +123,7 @@ export default function DashboardAdmin() {
           <h2 className="text-xl font-semibold mb-4">Últimos Dispositivos</h2>
           <ul className="space-y-2">
             {ultimosDispositivos.map(d => (
-              <li key={d.id} className="border-b pb-1">
+              <li key={d.id} className="border-b pb-1 border-gray-300">
                 <p className="font-medium">{d.nombre}</p>
                 <p className="text-sm text-gray-500">{d.tipo}</p>
               </li>

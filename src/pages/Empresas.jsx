@@ -1,6 +1,4 @@
-// src/pages/Empresa.jsx
 import React, { useState } from "react";
-import Sidebar from "../components/Sidebar";
 
 export default function Empresa() {
   const [empresas, setEmpresas] = useState([
@@ -37,39 +35,30 @@ export default function Empresa() {
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar unificado */}
-      <Sidebar
-        isCollapsed={false}
-        setIsCollapsed={() => {}}
-        isOpen={false}
-        setIsOpen={() => {}}
-        role="admin"
-      />
-
-      <main className="flex-1 p-6 md:ml-64">
+      <main className="flex-1 p-6">
         <h1 className="text-3xl font-bold mb-6">Empresas</h1>
 
         <div className="bg-white p-4 rounded-xl shadow-md overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr>
-                <th className="border-b p-2">ID</th>
-                <th className="border-b p-2">Nombre</th>
-                <th className="border-b p-2">Teléfono</th>
-                <th className="border-b p-2">IMEI</th>
-                <th className="border-b p-2">Vencimiento</th>
-                <th className="border-b p-2">Acciones</th>
+                <th className="border-b border-gray-300 p-2">ID</th>
+                <th className="border-b border-gray-300 p-2">Nombre</th>
+                <th className="border-b border-gray-300 p-2">Teléfono</th>
+                <th className="border-b border-gray-300 p-2">IMEI</th>
+                <th className="border-b border-gray-300 p-2">Vencimiento</th>
+                <th className="border-b border-gray-300 p-2">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {empresas.map((e) => (
                 <tr key={e.id}>
-                  <td className="border-b p-2">{e.id}</td>
-                  <td className="border-b p-2">{e.nombre}</td>
-                  <td className="border-b p-2">{e.telefono}</td>
-                  <td className="border-b p-2">{e.imei}</td>
-                  <td className="border-b p-2">{e.vencimiento}</td>
-                  <td className="border-b p-2">
+                  <td className="border-b border-gray-300 p-2">{e.id}</td>
+                  <td className="border-b border-gray-300 p-2">{e.nombre}</td>
+                  <td className="border-b border-gray-300 p-2">{e.telefono}</td>
+                  <td className="border-b border-gray-300 p-2">{e.imei}</td>
+                  <td className="border-b border-gray-300 p-2">{e.vencimiento}</td>
+                  <td className="border-b border-gray-300 p-2">
                     <button
                       onClick={() => openModal(e)}
                       className="bg-[#a7c957] text-white px-3 py-1 rounded-full hover:bg-[#6a994e] transition-colors"
@@ -86,14 +75,12 @@ export default function Empresa() {
         {/* Modal */}
         {modalOpen && (
           <div className="fixed inset-0 flex items-center justify-center z-50">
-            {/* Fondo oscuro con blur */}
             <div
               className={`absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity ${
                 closing ? "opacity-0" : "opacity-100"
               }`}
             ></div>
 
-            {/* Contenido modal */}
             <div
               className={`relative bg-white rounded-xl p-6 w-11/12 max-w-md shadow-lg z-10 ${
                 closing ? "animate-modal-out" : "animate-modal-in"
