@@ -66,7 +66,10 @@ export default function Usuarios() {
         <div className=" mb-6 flex flex-col md:flex-row md:justify-between md:items-center">
           <h1 className="text-3xl font-bold">Usuarios</h1>
           <div className="mt-3 md:mt-0 md:flex md:justify-end">
-            <button className="px-4 py-2 rounded-full bg-[#a7c957] text-white hover:bg-[#6a994e] transition-colors">
+            <button
+              onClick={() => openModal()}
+              className="px-4 py-2 rounded-full bg-[#a7c957] text-white hover:bg-[#6a994e] transition-colors"
+            >
               Nuevo Usuario
             </button>
           </div>
