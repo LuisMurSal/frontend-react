@@ -80,7 +80,7 @@ export default function Switches() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-gray-100">
       <main className="flex-1 p-6">
         <div className="mb-6 flex flex-col md:flex-row md:justify-between md:items-center">
           <h1 className="text-3xl font-bold">Switches</h1>

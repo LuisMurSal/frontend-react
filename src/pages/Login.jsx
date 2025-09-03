@@ -77,7 +77,7 @@ export default function Login() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-gray-100">
       <div className="flex flex-1">
         {/* Lado izquierdo: slideshow */}
         <div className="hidden md:flex w-1/2 relative overflow-hidden">

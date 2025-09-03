@@ -108,7 +108,7 @@ export default function DashboardAdmin() {
         <div className="mt-8 bg-white p-4 rounded-xl shadow-md">
           <h2 className="text-xl font-semibold mb-4">Dispositivos Activos / Switches Encendidos</h2>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={dispositivosActivos} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+            <LineChart data={dispositivosActivos} margin={{ top: 5, right: 20, bottom: 5, left: -20 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="hora" tick={isMobile ? false : undefined} />
               <YAxis />
@@ -123,7 +123,7 @@ export default function DashboardAdmin() {
         <div className="mt-8 bg-white p-4 rounded-xl shadow-md">
           <h2 className="text-xl font-semibold mb-4">Usuarios por Empresa</h2>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={usuariosPorEmpresa}>
+            <BarChart data={usuariosPorEmpresa} margin={{ top: 5, right: 20, bottom: 5, left: -20 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="nombre" tick={isMobile ? false : undefined} />
               <YAxis allowDecimals={false} />
