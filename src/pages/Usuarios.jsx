@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { supabase } from "../services/supabase";
 import { useNavigate } from "react-router-dom";
-
-const allUsers = [
-  { id: 1, nombre: "Juan Pérez", empresa: "AgroTech S.A." },
-  { id: 2, nombre: "María Gómez", empresa: "GreenFields" },
-  { id: 3, nombre: "Carlos López", empresa: "AgroTech S.A." },
-  { id: 4, nombre: "Ana Torres", empresa: "Pulso Agro" },
-];
 
 export default function Usuarios() {
   const navigate = useNavigate();
@@ -14,22 +8,53 @@ export default function Usuarios() {
   const [modalOpen, setModalOpen] = useState(false);
   const [usuarioEdit, setUsuarioEdit] = useState(null);
   const [closing, setClosing] = useState(false);
+  const [empresas, setEmpresas] = useState([]); // Para el dropdown de empresas
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user) return navigate("/");
+    const fetchData = async () => {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user) return navigate("/");
 
-    if (user.role === "admin") {
-      setUsuarios(allUsers);
-    } else if (user.role === "empresa") {
-      setUsuarios(allUsers.filter(u => u.empresa === user.empresa));
-    } else {
-      setUsuarios([]);
-    }
+      // Traer usuarios con nombre de empresa
+      const { data: usuariosData, error: usuariosError } = await supabase
+        .from("usuarios")
+        .select(`
+          id,
+          nombre,
+          correo,
+          role,
+          empresa_id,
+          empresa:empresas(nombre)
+        `);
+      if (usuariosError) console.error(usuariosError);
+      else {
+        if (user.role === "admin") setUsuarios(usuariosData);
+        else if (user.role === "empresa") {
+          setUsuarios(
+            usuariosData.filter(u => u.empresa_id === user.empresa_id)
+          );
+        } else {
+          setUsuarios([]);
+        }
+      }
+
+      // Traer empresas para el select
+      const { data: empresasData, error: empresasError } = await supabase
+        .from("empresas")
+        .select("*");
+      if (empresasError) console.error(empresasError);
+      else setEmpresas(empresasData);
+    };
+
+    fetchData();
   }, [navigate]);
 
   const openModal = (user = null) => {
-    setUsuarioEdit(user ? { ...user } : { id: null, nombre: "", empresa: "" });
+    setUsuarioEdit(
+      user
+        ? { ...user, empresa_id: user.empresa_id || "" }
+        : { id: null, nombre: "", correo: "", role: "cliente", empresa_id: "" }
+    );
     setModalOpen(true);
   };
 
@@ -41,21 +66,61 @@ export default function Usuarios() {
     }, 200);
   };
 
-  const handleChange = (e) => setUsuarioEdit({ ...usuarioEdit, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setUsuarioEdit({ ...usuarioEdit, [e.target.name]: e.target.value });
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (usuarioEdit.id) {
-      setUsuarios(usuarios.map(u => (u.id === usuarioEdit.id ? usuarioEdit : u)));
+      // Editar usuario
+      const { data, error } = await supabase
+        .from("usuarios")
+        .update({
+          nombre: usuarioEdit.nombre,
+          correo: usuarioEdit.correo,
+          role: usuarioEdit.role,
+          empresa_id: usuarioEdit.empresa_id || null,
+        })
+        .eq("id", usuarioEdit.id)
+        .select(`
+          *,
+          empresa:empresas(nombre)
+        `);
+      if (error) console.error(error);
+      else {
+        setUsuarios(
+          usuarios.map(u => (u.id === usuarioEdit.id ? data[0] : u))
+        );
+      }
     } else {
-      const newUser = { ...usuarioEdit, id: usuarios.length ? Math.max(...usuarios.map(u => u.id)) + 1 : 1 };
-      setUsuarios([...usuarios, newUser]);
+      // Crear usuario
+      const { data, error } = await supabase
+        .from("usuarios")
+        .insert([
+          {
+            nombre: usuarioEdit.nombre,
+            correo: usuarioEdit.correo,
+            role: usuarioEdit.role,
+            empresa_id: usuarioEdit.empresa_id || null,
+          },
+        ])
+        .select(`
+          *,
+          empresa:empresas(nombre)
+        `);
+      if (error) console.error(error);
+      else setUsuarios([...usuarios, data[0]]);
     }
     closeModal();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (window.confirm("¿Eliminar este usuario?")) {
-      setUsuarios(usuarios.filter(u => u.id !== usuarioEdit.id));
+      const { error } = await supabase
+        .from("usuarios")
+        .delete()
+        .eq("id", usuarioEdit.id);
+      if (error) console.error(error);
+      else setUsuarios(usuarios.filter(u => u.id !== usuarioEdit.id));
       closeModal();
     }
   };
@@ -82,6 +147,8 @@ export default function Usuarios() {
               <tr>
                 <th className="border-b border-gray-300 p-2">ID</th>
                 <th className="border-b border-gray-300 p-2">Nombre</th>
+                <th className="border-b border-gray-300 p-2">Correo</th>
+                <th className="border-b border-gray-300 p-2">Rol</th>
                 <th className="border-b border-gray-300 p-2">Empresa</th>
                 <th className="border-b border-gray-300 p-2">Acciones</th>
               </tr>
@@ -91,7 +158,11 @@ export default function Usuarios() {
                 <tr key={u.id}>
                   <td className="border-b border-gray-300 p-2">{u.id}</td>
                   <td className="border-b border-gray-300 p-2">{u.nombre}</td>
-                  <td className="border-b border-gray-300 p-2">{u.empresa}</td>
+                  <td className="border-b border-gray-300 p-2">{u.correo}</td>
+                  <td className="border-b border-gray-300 p-2">{u.role}</td>
+                  <td className="border-b border-gray-300 p-2">
+                    {u.empresa ? u.empresa.nombre : "-"}
+                  </td>
                   <td className="border-b border-gray-300 p-2">
                     <button
                       onClick={() => openModal(u)}
@@ -109,10 +180,15 @@ export default function Usuarios() {
         {/* Mobile Cards */}
         <div className="md:hidden flex flex-col gap-4">
           {usuarios.map(u => (
-            <div key={u.id} className="bg-white p-4 rounded-xl shadow-md flex flex-col gap-2">
+            <div
+              key={u.id}
+              className="bg-white p-4 rounded-xl shadow-md flex flex-col gap-2"
+            >
               <div><strong>ID:</strong> {u.id}</div>
               <div><strong>Nombre:</strong> {u.nombre}</div>
-              <div><strong>Empresa:</strong> {u.empresa}</div>
+              <div><strong>Correo:</strong> {u.correo}</div>
+              <div><strong>Rol:</strong> {u.role}</div>
+              <div><strong>Empresa:</strong> {u.empresa ? u.empresa.nombre : "-"}</div>
               <div className="flex justify-end mt-2">
                 <button
                   onClick={() => openModal(u)}
@@ -128,10 +204,20 @@ export default function Usuarios() {
         {/* Modal */}
         {modalOpen && (
           <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div className={`absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity ${closing ? "opacity-0" : "opacity-100"}`}></div>
+            <div
+              className={`absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity ${
+                closing ? "opacity-0" : "opacity-100"
+              }`}
+            ></div>
 
-            <div className={`relative bg-white rounded-xl p-6 w-11/12 max-w-md shadow-lg z-10 ${closing ? "animate-modal-out" : "animate-modal-in"}`}>
-              <h2 className="text-xl font-bold mb-4">{usuarioEdit?.id ? "Editar Usuario" : "Nuevo Usuario"}</h2>
+            <div
+              className={`relative bg-white rounded-xl p-6 w-11/12 max-w-md shadow-lg z-10 ${
+                closing ? "animate-modal-out" : "animate-modal-in"
+              }`}
+            >
+              <h2 className="text-xl font-bold mb-4">
+                {usuarioEdit?.id ? "Editar Usuario" : "Nuevo Usuario"}
+              </h2>
 
               <div className="mb-3">
                 <label className="block mb-1 font-semibold">Nombre</label>
@@ -145,26 +231,64 @@ export default function Usuarios() {
               </div>
 
               <div className="mb-3">
-                <label className="block mb-1 font-semibold">Empresa</label>
+                <label className="block mb-1 font-semibold">Correo</label>
                 <input
-                  type="text"
-                  name="empresa"
-                  value={usuarioEdit.empresa}
+                  type="email"
+                  name="correo"
+                  value={usuarioEdit.correo}
                   onChange={handleChange}
                   className="w-full p-2 border rounded"
                 />
               </div>
 
+              <div className="mb-3">
+                <label className="block mb-1 font-semibold">Rol</label>
+                <select
+                  name="role"
+                  value={usuarioEdit.role}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="admin">Admin</option>
+                  <option value="empresa">Empresa</option>
+                  <option value="cliente">Cliente</option>
+                </select>
+              </div>
+
+              <div className="mb-3">
+                <label className="block mb-1 font-semibold">Empresa</label>
+                <select
+                  name="empresa_id"
+                  value={usuarioEdit.empresa_id}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="">- Ninguna -</option>
+                  {empresas.map(e => (
+                    <option key={e.id} value={e.id}>{e.nombre}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="flex justify-end space-x-2">
-                <button onClick={closeModal} className="px-4 py-2 rounded-full border hover:bg-gray-100 transition-colors">
+                <button
+                  onClick={closeModal}
+                  className="px-4 py-2 rounded-full border hover:bg-gray-100 transition-colors"
+                >
                   Cancelar
                 </button>
                 {usuarioEdit?.id && (
-                  <button onClick={handleDelete} className="px-4 py-2 rounded-full bg-[#bc4749] text-white hover:bg-[#a63d3f] transition-colors">
+                  <button
+                    onClick={handleDelete}
+                    className="px-4 py-2 rounded-full bg-[#bc4749] text-white hover:bg-[#a63d3f] transition-colors"
+                  >
                     Eliminar
                   </button>
                 )}
-                <button onClick={handleSave} className="px-4 py-2 rounded-full bg-[#a7c957] text-white hover:bg-[#6a994e] transition-colors">
+                <button
+                  onClick={handleSave}
+                  className="px-4 py-2 rounded-full bg-[#a7c957] text-white hover:bg-[#6a994e] transition-colors"
+                >
                   Guardar
                 </button>
               </div>

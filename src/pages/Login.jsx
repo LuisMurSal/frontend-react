@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../services/supabase";
 import Logo from "../assets/images/logo_tele.webp";
 import Slide1 from "../assets/images/slide1.webp";
 import Slide2 from "../assets/images/slide2.webp";
@@ -8,13 +9,6 @@ import Slide4 from "../assets/images/slide4.webp";
 
 export default function Login() {
   const navigate = useNavigate();
-
-  const users = [
-    { email: "admin@correo.com", password: "123456", role: "admin" },
-    { email: "cliente@correo.com", password: "123456", role: "cliente" },
-    { email: "empresa@correo.com", password: "123456", role: "empresa" },
-  ];
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -26,45 +20,75 @@ export default function Login() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000); // Cambia cada 3 segundos
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
 
-    const user = users.find(
-      (u) => u.email === email && u.password === password
-    );
+    try {
+      // 1️⃣ Login con Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (!user) {
-      setError("Correo o contraseña incorrectos");
-      return;
+      if (authError || !authData.user) {
+        setError("Correo o contraseña incorrectos");
+        return;
+      }
+
+      // 2️⃣ Obtener datos completos del usuario desde la tabla usuarios
+      const { data: userData, error: userError } = await supabase
+        .from("usuarios")
+        .select("*")
+        .eq("id", authData.user.id)
+        .single();
+
+      if (userError || !userData) {
+        setError("Usuario no encontrado en la base de datos");
+        return;
+      }
+
+      // 3️⃣ Guardar info en localStorage
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      // 4️⃣ Redirigir según rol
+      switch (userData.role) {
+        case "admin":
+          navigate("/dashboard-admin");
+          break;
+        case "empresa":
+          navigate("/dashboard-empresa");
+          break;
+        case "cliente":
+          navigate("/dashboard-cliente");
+          break;
+        default:
+          setError("Rol desconocido");
+      }
+    } catch (err) {
+      console.log(err);
+      setError("Ocurrió un error, intenta de nuevo");
     }
-
-    localStorage.setItem("user", JSON.stringify(user));
-
-    if (user.role === "admin") navigate("/dashboard-admin");
-    if (user.role === "cliente") navigate("/dashboard-cliente");
-    if (user.role === "empresa") navigate("/dashboard-empresa");
   };
 
   return (
     <div className="flex flex-col min-h-screen">
       <div className="flex flex-1">
-
-        {/* Lado izquierdo: slideshow con fade */}
+        {/* Lado izquierdo: slideshow */}
         <div className="hidden md:flex w-1/2 relative overflow-hidden">
           {slides.map((slide, index) => (
             <img
               key={index}
               src={slide}
               alt={`Slide ${index + 1}`}
-              className={`
-                absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-5000
-                ${index === currentSlide ? "opacity-100" : "opacity-0"}
-              `}
+              className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-5000 ${
+                index === currentSlide ? "opacity-100" : "opacity-0"
+              }`}
             />
           ))}
         </div>
@@ -97,9 +121,7 @@ export default function Login() {
 
             {error && <p className="text-red-500 mb-4">{error}</p>}
 
-            <p className="my-2 text-sm text-[#6a994e] self-end">
-              ¿Olvidaste tu contraseña?
-            </p>
+            <p className="my-2 text-sm text-[#6a994e] self-end">¿Olvidaste tu contraseña?</p>
 
             <button
               type="submit"

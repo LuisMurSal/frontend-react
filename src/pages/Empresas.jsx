@@ -1,19 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { supabase } from "../services/supabase";
 
 export default function Empresa() {
-  const [empresas, setEmpresas] = useState([
-    { id: 1, nombre: "AgroTech S.A.", telefono: "555-1234", imei: "123456789012345", vencimiento: "2025-12-31" },
-    { id: 2, nombre: "GreenFields", telefono: "555-5678", imei: "987654321098765", vencimiento: "2025-11-30" },
-    { id: 3, nombre: "Pulso Agro", telefono: "555-9012", imei: "192837465091283", vencimiento: "2026-01-15" },
-  ]);
-
+  const [empresas, setEmpresas] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [empresaEdit, setEmpresaEdit] = useState(null);
   const [closing, setClosing] = useState(false);
 
+  // --- Fetch empresas desde Supabase ---
+  useEffect(() => {
+    const fetchEmpresas = async () => {
+      const { data, error } = await supabase.from("empresas").select("*");
+      if (error) console.error("Error fetching empresas:", error);
+      else setEmpresas(data);
+    };
+    fetchEmpresas();
+  }, []);
+
   const openModal = (empresa) => {
     setEmpresaEdit(
-      empresa ? { ...empresa } : { id: null, nombre: "", telefono: "", imei: "", vencimiento: "" }
+      empresa
+        ? { ...empresa }
+        : { id: null, nombre: "", telefono: "", correo: "", vencimiento: "" }
     );
     setModalOpen(true);
   };
@@ -30,12 +38,38 @@ export default function Empresa() {
     setEmpresaEdit({ ...empresaEdit, [e.target.name]: e.target.value });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (empresaEdit.id) {
-      setEmpresas(empresas.map((emp) => (emp.id === empresaEdit.id ? empresaEdit : emp)));
+      // Editar empresa
+      const { data, error } = await supabase
+        .from("empresas")
+        .update({
+          nombre: empresaEdit.nombre,
+          telefono: empresaEdit.telefono,
+          correo: empresaEdit.correo,
+          vencimiento: empresaEdit.vencimiento,
+        })
+        .eq("id", empresaEdit.id)
+        .select();
+      if (error) console.error("Error updating empresa:", error);
+      else {
+        setEmpresas(empresas.map((e) => (e.id === empresaEdit.id ? data[0] : e)));
+      }
     } else {
-      const nuevaEmpresa = { ...empresaEdit, id: empresas.length + 1 };
-      setEmpresas([...empresas, nuevaEmpresa]);
+      // Crear nueva empresa
+      const { data, error } = await supabase
+        .from("empresas")
+        .insert([
+          {
+            nombre: empresaEdit.nombre,
+            telefono: empresaEdit.telefono,
+            correo: empresaEdit.correo,
+            vencimiento: empresaEdit.vencimiento,
+          },
+        ])
+        .select();
+      if (error) console.error("Error creating empresa:", error);
+      else setEmpresas([...empresas, data[0]]);
     }
     closeModal();
   };
@@ -63,7 +97,7 @@ export default function Empresa() {
                 <th className="border-b border-gray-300 p-2">ID</th>
                 <th className="border-b border-gray-300 p-2">Nombre</th>
                 <th className="border-b border-gray-300 p-2">Teléfono</th>
-                <th className="border-b border-gray-300 p-2">IMEI</th>
+                <th className="border-b border-gray-300 p-2">Correo</th>
                 <th className="border-b border-gray-300 p-2">Vencimiento</th>
                 <th className="border-b border-gray-300 p-2">Acciones</th>
               </tr>
@@ -74,7 +108,7 @@ export default function Empresa() {
                   <td className="border-b border-gray-300 p-2">{e.id}</td>
                   <td className="border-b border-gray-300 p-2">{e.nombre}</td>
                   <td className="border-b border-gray-300 p-2">{e.telefono}</td>
-                  <td className="border-b border-gray-300 p-2">{e.imei}</td>
+                  <td className="border-b border-gray-300 p-2">{e.correo}</td>
                   <td className="border-b border-gray-300 p-2">{e.vencimiento}</td>
                   <td className="border-b border-gray-300 p-2">
                     <button
@@ -97,7 +131,7 @@ export default function Empresa() {
               <div><strong>ID:</strong> {e.id}</div>
               <div><strong>Nombre:</strong> {e.nombre}</div>
               <div><strong>Teléfono:</strong> {e.telefono}</div>
-              <div><strong>IMEI:</strong> {e.imei}</div>
+              <div><strong>Correo:</strong> {e.correo}</div>
               <div><strong>Vencimiento:</strong> {e.vencimiento}</div>
               <div className="flex justify-end mt-2">
                 <button
@@ -152,11 +186,11 @@ export default function Empresa() {
               </div>
 
               <div className="mb-3">
-                <label className="block mb-1 font-semibold">IMEI</label>
+                <label className="block mb-1 font-semibold">Correo</label>
                 <input
-                  type="text"
-                  name="imei"
-                  value={empresaEdit.imei}
+                  type="email"
+                  name="correo"
+                  value={empresaEdit.correo}
                   onChange={handleChange}
                   className="w-full p-2 border rounded"
                 />
