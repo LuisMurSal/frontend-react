@@ -8,14 +8,18 @@ import DashboardEmpresa from "./pages/DashboardEmpresa";
 import Empresa from "./pages/Empresas";
 import Usuarios from "./pages/Usuarios";
 import Sidebar from "./components/Sidebar";
+import Switches from "./pages/Switches";
+import Dispositivos from "./pages/Dispositivos";
+
+
 
 // Ruta privada según rol
-function PrivateRoute({ children, role }) {
+function PrivateRoute({ children, roles }) {
   const user = JSON.parse(localStorage.getItem("user")); 
 
   if (!user) return <Navigate to="/" />;
 
-  if (role && user.role !== role) {
+  if (roles && !roles.includes(user.role)) {
     switch(user.role) {
       case "admin": return <Navigate to="/dashboard-admin" />;
       case "cliente": return <Navigate to="/dashboard-cliente" />;
@@ -26,6 +30,7 @@ function PrivateRoute({ children, role }) {
 
   return children;
 }
+
 
 // Layout que incluye el sidebar
 function ProtectedLayout({ children, isCollapsed, setIsCollapsed, isOpen, setIsOpen }) {
@@ -116,7 +121,7 @@ function App() {
         <Route 
           path="/usuarios" 
           element={
-            <PrivateRoute role="admin">
+            <PrivateRoute roles={['admin','empresa']}>
               <ProtectedLayout 
                 isCollapsed={isCollapsed} 
                 setIsCollapsed={setIsCollapsed} 
@@ -124,6 +129,36 @@ function App() {
                 setIsOpen={setIsOpen}
               >
                 <Usuarios />
+              </ProtectedLayout>
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/switches" 
+          element={
+            <PrivateRoute role="admin">
+              <ProtectedLayout 
+                isCollapsed={isCollapsed} 
+                setIsCollapsed={setIsCollapsed} 
+                isOpen={isOpen} 
+                setIsOpen={setIsOpen}
+              >
+                <Switches />
+              </ProtectedLayout>
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/dispositivos" 
+          element={
+            <PrivateRoute role="admin">
+              <ProtectedLayout 
+                isCollapsed={isCollapsed} 
+                setIsCollapsed={setIsCollapsed} 
+                isOpen={isOpen} 
+                setIsOpen={setIsOpen}
+              >
+                <Dispositivos />
               </ProtectedLayout>
             </PrivateRoute>
           } 
