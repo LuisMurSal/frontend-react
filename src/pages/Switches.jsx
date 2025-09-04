@@ -1,36 +1,39 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { supabase } from "../services/supabase";
 
 export default function Switches() {
-  const [switches, setSwitches] = useState([
-    {
-      id: 1,
-      empresa: "Empresa Demo",
-      dispositivo: "ESP32-001",
-      ubicacion: "Sitio 1",
-      paresPanel: 0,
-      switchesIndividuales: [
-        { numero: 1, ubicacion: "COOLER SUR", pinSensor: "A0", nombre: "COOLER SUR", tipo: "Pin ESP32" },
-      ],
-    },
-    {
-      id: 2,
-      empresa: "Empresa Demo",
-      dispositivo: "ESP32-002",
-      ubicacion: "Sitio 2",
-      paresPanel: 1,
-      switchesIndividuales: [
-        { numero: 1, ubicacion: "VENTILADOR NORTE", pinSensor: "A1", nombre: "VENTILADOR NORTE", tipo: "Pin ESP32" },
-        { numero: 2, ubicacion: "LUZ SUR", pinSensor: "A2", nombre: "LUZ SUR", tipo: "Pin ESP32" },
-      ],
-    },
-  ]);
-
+  const [switches, setSwitches] = useState([]);
+  const [empresas, setEmpresas] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [switchEdit, setSwitchEdit] = useState(null);
   const [closing, setClosing] = useState(false);
 
+  // --- Fetch switches ---
+  useEffect(() => {
+    const fetchSwitches = async () => {
+      const { data, error } = await supabase.from("switches").select("*");
+      if (error) console.error("Error fetching switches:", error);
+      else setSwitches(data);
+    };
+    fetchSwitches();
+  }, []);
+
+  // --- Fetch empresas ---
+  useEffect(() => {
+    const fetchEmpresas = async () => {
+      const { data, error } = await supabase.from("empresas").select("*");
+      if (error) console.error("Error fetching empresas:", error);
+      else setEmpresas(data);
+    };
+    fetchEmpresas();
+  }, []);
+
   const openModal = (sw = null) => {
-    setSwitchEdit(sw ? { ...sw } : { empresa: "", dispositivo: "", ubicacion: "", paresPanel: 0, switchesIndividuales: [] });
+    setSwitchEdit(
+      sw
+        ? { ...sw }
+        : { id: null, empresa_id: "", dispositivo: "", ubicacion: "", paresPanel: 0, switches_individuales: [] }
+    );
     setModalOpen(true);
   };
 
@@ -42,41 +45,83 @@ export default function Switches() {
     }, 200);
   };
 
-  const handleChange = (e) => setSwitchEdit({ ...switchEdit, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const updated = { ...switchEdit, [e.target.name]: e.target.value };
+    setSwitchEdit(updated);
+  };
 
   const handleIndividualChange = (index, field, value) => {
-    const updated = [...switchEdit.switchesIndividuales];
+    const updated = [...switchEdit.switches_individuales];
     updated[index][field] = value;
-    setSwitchEdit({ ...switchEdit, switchesIndividuales: updated });
+    const pares = Math.floor(updated.length / 2);
+    setSwitchEdit({ ...switchEdit, switches_individuales: updated, paresPanel: pares });
   };
 
   const addIndividual = () => {
-    const nextNum = switchEdit.switchesIndividuales.length
-      ? Math.max(...switchEdit.switchesIndividuales.map(s => s.numero)) + 1
+    const nextNum = switchEdit.switches_individuales.length
+      ? Math.max(...switchEdit.switches_individuales.map(s => s.numero)) + 1
       : 1;
-    setSwitchEdit({
-      ...switchEdit,
-      switchesIndividuales: [
-        ...switchEdit.switchesIndividuales,
-        { numero: nextNum, nombre: "", ubicacion: "", pinSensor: "", tipo: "" },
-      ],
-    });
+    const updatedIndividuals = [
+      ...switchEdit.switches_individuales,
+      { numero: nextNum, nombre: "", ubicacion: "", pinSensor: "", tipo: "" },
+    ];
+    const pares = Math.floor(updatedIndividuals.length / 2);
+    setSwitchEdit({ ...switchEdit, switches_individuales: updatedIndividuals, paresPanel: pares });
   };
 
   const removeIndividual = (index) => {
-    const updated = [...switchEdit.switchesIndividuales];
+    const updated = [...switchEdit.switches_individuales];
     updated.splice(index, 1);
-    setSwitchEdit({ ...switchEdit, switchesIndividuales: updated });
+    const pares = Math.floor(updated.length / 2);
+    setSwitchEdit({ ...switchEdit, switches_individuales: updated, paresPanel: pares });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (switchEdit.id) {
-      setSwitches(switches.map(sw => (sw.id === switchEdit.id ? switchEdit : sw)));
+      // Editar switch
+      const { data, error } = await supabase
+        .from("switches")
+        .update({
+          empresa_id: switchEdit.empresa_id,
+          dispositivo: switchEdit.dispositivo,
+          ubicacion: switchEdit.ubicacion,
+          paresPanel: switchEdit.paresPanel,
+          switches_individuales: switchEdit.switches_individuales,
+        })
+        .eq("id", switchEdit.id)
+        .select();
+      if (error) console.error("Error updating switch:", error);
+      else setSwitches(switches.map(s => (s.id === switchEdit.id ? data[0] : s)));
     } else {
-      const newSwitch = { ...switchEdit, id: switches.length ? Math.max(...switches.map(s => s.id)) + 1 : 1 };
-      setSwitches([...switches, newSwitch]);
+      // Crear nuevo switch
+      const { data, error } = await supabase
+        .from("switches")
+        .insert([{
+          empresa_id: switchEdit.empresa_id,
+          dispositivo: switchEdit.dispositivo,
+          ubicacion: switchEdit.ubicacion,
+          paresPanel: switchEdit.paresPanel,
+          switches_individuales: switchEdit.switches_individuales,
+        }])
+        .select();
+      if (error) console.error("Error creating switch:", error);
+      else setSwitches([...switches, data[0]]);
     }
     closeModal();
+  };
+
+  const handleDelete = async () => {
+    if (!switchEdit?.id) return;
+    const { error } = await supabase.from("switches").delete().eq("id", switchEdit.id);
+    if (error) console.error("Error deleting switch:", error);
+    else setSwitches(switches.filter(s => s.id !== switchEdit.id));
+    closeModal();
+  };
+
+  // --- Helper para mostrar nombre de empresa ---
+  const getEmpresaNombre = (empresa_id) => {
+    const empresa = empresas.find(e => e.id === empresa_id);
+    return empresa ? empresa.nombre : "Sin empresa";
   };
 
   return (
@@ -86,7 +131,7 @@ export default function Switches() {
           <h1 className="text-3xl font-bold">Switches</h1>
           <div className="mt-3 md:mt-0 md:flex md:justify-end">
             <button
-              onClick={() => openModal()}
+              onClick={() => openModal(null)}
               className="px-4 py-2 bg-[#a7c957] text-white rounded-full hover:bg-[#6a994e] transition"
             >
               Nuevo Switch
@@ -99,7 +144,6 @@ export default function Switches() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr>
-                <th className="border-b border-gray-300 p-2">ID</th>
                 <th className="border-b border-gray-300 p-2">Empresa</th>
                 <th className="border-b border-gray-300 p-2">Dispositivo</th>
                 <th className="border-b border-gray-300 p-2">Ubicación</th>
@@ -111,13 +155,12 @@ export default function Switches() {
             <tbody>
               {switches.map(sw => (
                 <tr key={sw.id}>
-                  <td className="border-b border-gray-300 p-2">{sw.id}</td>
-                  <td className="border-b border-gray-300 p-2">{sw.empresa}</td>
+                  <td className="border-b border-gray-300 p-2">{getEmpresaNombre(sw.empresa_id)}</td>
                   <td className="border-b border-gray-300 p-2">{sw.dispositivo}</td>
                   <td className="border-b border-gray-300 p-2">{sw.ubicacion}</td>
                   <td className="border-b border-gray-300 p-2">{sw.paresPanel}</td>
                   <td className="border-b border-gray-300 p-2">
-                    {sw.switchesIndividuales.map(swi => (
+                    {sw.switches_individuales.map(swi => (
                       <div key={swi.numero} className="mb-1">
                         <strong>#{swi.numero}</strong> - {swi.nombre} ({swi.tipo})
                       </div>
@@ -141,14 +184,13 @@ export default function Switches() {
         <div className="md:hidden flex flex-col gap-4">
           {switches.map(sw => (
             <div key={sw.id} className="bg-white p-4 rounded-xl shadow-md flex flex-col gap-2">
-              <div><strong>ID:</strong> {sw.id}</div>
-              <div><strong>Empresa:</strong> {sw.empresa}</div>
+              <div><strong>Empresa:</strong> {getEmpresaNombre(sw.empresa_id)}</div>
               <div><strong>Dispositivo:</strong> {sw.dispositivo}</div>
               <div><strong>Ubicación:</strong> {sw.ubicacion}</div>
               <div><strong>Pares Panel:</strong> {sw.paresPanel}</div>
               <div>
                 <strong>Switches Individuales:</strong>
-                {sw.switchesIndividuales.map(swi => (
+                {sw.switches_individuales.map(swi => (
                   <div key={swi.numero} className="ml-2">
                     #{swi.numero} - {swi.nombre} ({swi.tipo})
                   </div>
@@ -169,16 +211,43 @@ export default function Switches() {
         {/* Modal */}
         {modalOpen && (
           <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div className={`absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity ${closing ? "opacity-0" : "opacity-100"}`}></div>
+            <div
+              className={`absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity ${
+                closing ? "opacity-0" : "opacity-100"
+              }`}
+            ></div>
 
-            <div className={`relative bg-white rounded-xl p-6 w-11/12 max-w-md shadow-lg z-10 ${closing ? "animate-modal-out" : "animate-modal-in"}`}>
-              <h2 className="text-xl font-bold mb-4">{switchEdit?.id ? "Editar Switch" : "Nuevo Switch"}</h2>
+            <div
+              className={`relative bg-white rounded-xl p-6 w-11/12 max-w-md shadow-lg z-10 ${
+                closing ? "animate-modal-out" : "animate-modal-in"
+              }`}
+            >
+              <h2 className="text-xl font-bold mb-4">
+                {switchEdit?.id ? "Editar Switch" : "Nuevo Switch"}
+              </h2>
 
-              {["empresa", "dispositivo", "ubicacion", "paresPanel"].map(field => (
+              {/* Empresa select */}
+              <div className="mb-3">
+                <label className="block mb-1 font-semibold">Empresa</label>
+                <select
+                  name="empresa_id"
+                  value={switchEdit.empresa_id}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="">Selecciona una empresa</option>
+                  {empresas.map(e => (
+                    <option key={e.id} value={e.id}>{e.nombre}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Campos principales */}
+              {["dispositivo", "ubicacion"].map(field => (
                 <div className="mb-3" key={field}>
                   <label className="block mb-1 font-semibold">{field.charAt(0).toUpperCase() + field.slice(1)}</label>
                   <input
-                    type={field === "paresPanel" ? "number" : "text"}
+                    type="text"
                     name={field}
                     value={switchEdit[field]}
                     onChange={handleChange}
@@ -190,7 +259,7 @@ export default function Switches() {
               {/* Switches individuales */}
               <div className="mb-4">
                 <h3 className="font-semibold mb-2">Switches Individuales</h3>
-                {switchEdit.switchesIndividuales.map((swi, index) => (
+                {switchEdit.switches_individuales.map((swi, index) => (
                   <div key={index} className="flex gap-2 mb-2">
                     <input
                       type="text"
@@ -236,9 +305,28 @@ export default function Switches() {
                 </button>
               </div>
 
+              {/* Botones modal */}
               <div className="flex justify-end space-x-2">
-                <button onClick={closeModal} className="px-4 py-2 rounded-full border hover:bg-gray-100">Cancelar</button>
-                <button onClick={handleSave} className="px-4 py-2 rounded-full bg-[#a7c957] text-white hover:bg-[#6a994e]">Guardar</button>
+                <button
+                  onClick={closeModal}
+                  className="px-4 py-2 rounded-full border hover:bg-gray-100 transition-colors"
+                >
+                  Cancelar
+                </button>
+                {switchEdit?.id && (
+                  <button
+                    onClick={handleDelete}
+                    className="px-4 py-2 rounded-full bg-[#bc4749] text-white hover:bg-[#A63D3F] transition-colors"
+                  >
+                    Eliminar
+                  </button>
+                )}
+                <button
+                  onClick={handleSave}
+                  className="px-4 py-2 rounded-full bg-[#a7c957] text-white hover:bg-[#6a994e] transition-colors"
+                >
+                  Guardar
+                </button>
               </div>
             </div>
           </div>
@@ -247,4 +335,3 @@ export default function Switches() {
     </div>
   );
 }
-
