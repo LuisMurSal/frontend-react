@@ -108,7 +108,7 @@ export default function Dispositivos() {
                 <th className="border-b border-gray-300 p-2">Shelly ID</th>
                 <th className="border-b border-gray-300 p-2">Auth Key</th>
                 <th className="border-b border-gray-300 p-2">Tipo</th>
-                <th className="border-b border-gray-300 p-2">Servidos</th>
+                <th className="border-b border-gray-300 p-2">Servidor</th>
                 <th className="border-b border-gray-300 p-2">Empresa</th>
                 <th className="border-b border-gray-300 p-2">Vencimiento</th>
                 <th className="border-b border-gray-300 p-2">Acciones</th>
@@ -148,7 +148,7 @@ export default function Dispositivos() {
               <div><strong>Shelly ID:</strong> {d.shellyId}</div>
               <div><strong>Auth Key:</strong> {d.authKey}</div>
               <div><strong>Tipo:</strong> {d.tipo}</div>
-              <div><strong>Servidos:</strong> {d.servidos}</div>
+              <div><strong>Servidor:</strong> {d.servidos}</div>
               <div><strong>Empresa:</strong> {d.empresa}</div>
               <div><strong>Vencimiento:</strong> {d.vencimiento}</div>
               <div className="flex justify-end mt-2">
@@ -195,7 +195,7 @@ export default function Dispositivos() {
               ))}
 
               <div className="flex justify-end space-x-2">
-                <button onClick={closeModal} className="px-4 py-2 rounded-full border hover:bg-gray-100 transition-colors">
+                <button onClick={closeModal} className="px-4 py-2 rounded-full border hover:bg-gray-100  transition-colors">
                   Cancelar
                 </button>
                 {dispositivoEdit?.id && (
