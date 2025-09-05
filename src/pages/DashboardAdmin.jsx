@@ -12,7 +12,7 @@ export default function DashboardAdmin() {
   const [dispositivosActivos, setDispositivosActivos] = useState([]);
   const [usuariosPorEmpresa, setUsuariosPorEmpresa] = useState([]);
 
-  const isMobile = window.innerWidth < 768; // Detecta pantalla móvil
+  const isMobile = window.innerWidth < 768;
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -33,7 +33,7 @@ export default function DashboardAdmin() {
 
   useEffect(() => {
     const fetchData = async () => {
-      // --- Últimos usuarios (solo 5) ---
+      // Últimos usuarios
       const { data: usuariosData, error: usuariosError } = await supabase
         .from("usuarios")
         .select("*")
@@ -42,7 +42,7 @@ export default function DashboardAdmin() {
       if (usuariosError) console.error(usuariosError);
       else setUltimosUsuarios(usuariosData || []);
 
-      // --- Todas las empresas ---
+      // Empresas
       const { data: empresasData, error: empresasError } = await supabase
         .from("empresas")
         .select("*")
@@ -50,16 +50,46 @@ export default function DashboardAdmin() {
       if (empresasError) console.error(empresasError);
       else setUltimasEmpresas(empresasData || []);
 
-      // --- Estadísticas ---
+      // Estadísticas
       const { count: totalUsuarios } = await supabase.from("usuarios").select("*", { count: "exact" });
       const { count: totalEmpresas } = await supabase.from("empresas").select("*", { count: "exact" });
-      setStats([
-        { label: "Usuarios Totales", value: totalUsuarios || 0, icon: Users, bg: "bg-[#a7c957]" },
-        { label: "Empresas Totales", value: totalEmpresas || 0, icon: Building, bg: "bg-[#6a994e]" },
-        { label: "Switches Encendidos", value: 32, icon: Server, bg: "bg-[#f2e8cf] text-[#4f772d]" },
-      ]);
 
-      // --- Usuarios por empresa ---
+      // Dispositivos activos y switches
+      const { data: dispositivosData, error: dispositivosError } = await supabase
+        .from("dispositivos")
+        .select("*");
+      if (dispositivosError) console.error(dispositivosError);
+      else {
+        const switchesEncendidos = dispositivosData.filter(d => d.estado).length;
+
+        // Generar datos agrupados por hora
+        const dispositivosPorHora = dispositivosData.map(d => ({
+          hora: new Date(d.created_at).getHours() + ":00",
+          dispositivos: 1,
+          switches: d.estado ? 1 : 0,
+        }));
+
+        const grouped = dispositivosPorHora.reduce((acc, curr) => {
+          const found = acc.find(a => a.hora === curr.hora);
+          if (found) {
+            found.dispositivos += curr.dispositivos;
+            found.switches += curr.switches;
+          } else {
+            acc.push({ ...curr });
+          }
+          return acc;
+        }, []);
+
+        setDispositivosActivos(grouped);
+
+        setStats([
+          { label: "Usuarios Totales", value: totalUsuarios || 0, icon: Users, bg: "bg-[#a7c957]" },
+          { label: "Empresas Totales", value: totalEmpresas || 0, icon: Building, bg: "bg-[#6a994e]" },
+          { label: "Switches Encendidos", value: switchesEncendidos, icon: Server, bg: "bg-[#f2e8cf] text-[#4f772d]" },
+        ]);
+      }
+
+      // Usuarios por empresa
       const { data: todosUsuarios, error: allUsersError } = await supabase.from("usuarios").select("empresa_id");
       if (allUsersError) console.error(allUsersError);
       else if (empresasData) {
@@ -69,15 +99,6 @@ export default function DashboardAdmin() {
         });
         setUsuariosPorEmpresa(countData);
       }
-
-      // --- Dispositivos activos (ejemplo) ---
-      setDispositivosActivos([
-        { hora: "08:00", dispositivos: 12, switches: 5 },
-        { hora: "09:00", dispositivos: 18, switches: 7 },
-        { hora: "10:00", dispositivos: 20, switches: 10 },
-        { hora: "11:00", dispositivos: 17, switches: 8 },
-        { hora: "12:00", dispositivos: 25, switches: 12 },
-      ]);
     };
 
     fetchData();
@@ -135,7 +156,6 @@ export default function DashboardAdmin() {
 
         {/* Últimos usuarios y empresas */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Últimos 3 usuarios */}
           <div className="bg-white p-4 rounded-xl shadow-md">
             <h2 className="text-xl font-semibold mb-4">Últimos Usuarios</h2>
             <ul className="space-y-2">
@@ -148,7 +168,6 @@ export default function DashboardAdmin() {
             </ul>
           </div>
 
-          {/* Últimas 3 empresas */}
           <div className="bg-white p-4 rounded-xl shadow-md">
             <h2 className="text-xl font-semibold mb-4">Últimas Empresas</h2>
             <ul className="space-y-2">
