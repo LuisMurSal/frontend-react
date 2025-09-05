@@ -8,7 +8,7 @@ export default function Switches() {
   const [switchEdit, setSwitchEdit] = useState(null);
   const [closing, setClosing] = useState(false);
 
-  // --- Fetch inicial de switches y empresas ---
+  // --- Fetch inicial ---
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -23,7 +23,6 @@ export default function Switches() {
           .select("*");
         if (switchesError) throw switchesError;
 
-        // Asegurarse de que switches_individuales sea un array
         setSwitches(
           switchesData.map((s) => ({
             ...s,
@@ -51,7 +50,14 @@ export default function Switches() {
             : sw.switches_individuales || [],
       });
     } else {
-      setSwitchEdit({ id: null, empresa_id: "", dispositivo: "", ubicacion: "", switches_individuales: [] });
+      setSwitchEdit({
+        id: null,
+        empresa_id: "",
+        dispositivo: "",
+        ubicacion: "",
+        encendido: false,
+        switches_individuales: [],
+      });
     }
     setModalOpen(true);
   };
@@ -101,8 +107,10 @@ export default function Switches() {
       empresa_id: switchEdit.empresa_id,
       dispositivo: switchEdit.dispositivo,
       ubicacion: switchEdit.ubicacion,
-      paresPanel,
+      parespanel: paresPanel,
       switches_individuales: switchEdit.switches_individuales,
+      encendido: switchEdit.encendido ?? false, // ✅ nuevo campo
+      updated_at: new Date().toISOString(),
     };
 
     try {
@@ -117,7 +125,17 @@ export default function Switches() {
 
         if (error) throw error;
 
-        setSwitches((prev) => prev.map((s) => (s.id === switchEdit.id ? data : s)));
+        const normalized = {
+          ...data,
+          switches_individuales:
+            typeof data.switches_individuales === "string"
+              ? JSON.parse(data.switches_individuales)
+              : data.switches_individuales || [],
+        };
+
+        setSwitches((prev) =>
+          prev.map((s) => (s.id === switchEdit.id ? normalized : s))
+        );
       } else {
         // CREAR
         const { data, error } = await supabase
@@ -128,7 +146,15 @@ export default function Switches() {
 
         if (error) throw error;
 
-        setSwitches((prev) => [...prev, data]);
+        const normalized = {
+          ...data,
+          switches_individuales:
+            typeof data.switches_individuales === "string"
+              ? JSON.parse(data.switches_individuales)
+              : data.switches_individuales || [],
+        };
+
+        setSwitches((prev) => [...prev, normalized]);
       }
       closeModal();
     } catch (err) {
@@ -136,18 +162,15 @@ export default function Switches() {
     }
   };
 
-  // --- Eliminar switch ---
+  // --- Eliminar ---
   const handleDelete = async () => {
     if (!switchEdit?.id) return;
-
     try {
       const { error } = await supabase
         .from("switches")
         .delete()
         .eq("id", switchEdit.id);
-
       if (error) throw error;
-
       setSwitches((prev) => prev.filter((s) => s.id !== switchEdit.id));
       closeModal();
     } catch (err) {
@@ -183,22 +206,41 @@ export default function Switches() {
                 <th className="border-b border-gray-300 p-2">Empresa</th>
                 <th className="border-b border-gray-300 p-2">Dispositivo</th>
                 <th className="border-b border-gray-300 p-2">Ubicación</th>
+                <th className="border-b border-gray-300 p-2">Estado</th>
                 <th className="border-b border-gray-300 p-2">Pares Panel</th>
-                <th className="border-b border-gray-300 p-2">Switches Individuales</th>
+                <th className="border-b border-gray-300 p-2">
+                  Switches Individuales
+                </th>
                 <th className="border-b border-gray-300 p-2">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {switches.map((sw) => (
                 <tr key={sw.id}>
-                  <td className="border-b border-gray-300 p-2">{getEmpresaNombre(sw.empresa_id)}</td>
-                  <td className="border-b border-gray-300 p-2">{sw.dispositivo}</td>
-                  <td className="border-b border-gray-300 p-2">{sw.ubicacion}</td>
-                  <td className="border-b border-gray-300 p-2">{Math.ceil(sw.switches_individuales.length / 2)}</td>
+                  <td className="border-b border-gray-300 p-2">
+                    {getEmpresaNombre(sw.empresa_id)}
+                  </td>
+                  <td className="border-b border-gray-300 p-2">
+                    {sw.dispositivo}
+                  </td>
+                  <td className="border-b border-gray-300 p-2">
+                    {sw.ubicacion}
+                  </td>
+                  <td className="border-b border-gray-300 p-2">
+                    {sw.encendido ? (
+                      <span className="text-green-600 font-bold">Encendido</span>
+                    ) : (
+                      <span className="text-[#bc4749] font-bold">Apagado</span>
+                    )}
+                  </td>
+                  <td className="border-b border-gray-300 p-2">
+                    {Math.ceil(sw.switches_individuales.length / 2)}
+                  </td>
                   <td className="border-b border-gray-300 p-2">
                     {sw.switches_individuales.map((swi) => (
                       <div key={swi.numero} className="mb-1">
-                        <strong>#{swi.numero}</strong> - {swi.nombre} ({swi.tipo})
+                        <strong>#{swi.numero}</strong> - {swi.nombre} (
+                        {swi.tipo})
                       </div>
                     ))}
                   </td>
@@ -219,11 +261,27 @@ export default function Switches() {
         {/* Mobile Cards */}
         <div className="md:hidden flex flex-col gap-4">
           {switches.map((sw) => (
-            <div key={sw.id} className="bg-white p-4 rounded-xl shadow-md flex flex-col gap-2">
-              <div><strong>Empresa:</strong> {getEmpresaNombre(sw.empresa_id)}</div>
-              <div><strong>Dispositivo:</strong> {sw.dispositivo}</div>
-              <div><strong>Ubicación:</strong> {sw.ubicacion}</div>
-              <div><strong>Pares Panel:</strong> {Math.ceil(sw.switches_individuales.length / 2)}</div>
+            <div
+              key={sw.id}
+              className="bg-white p-4 rounded-xl shadow-md flex flex-col gap-2"
+            >
+              <div>
+                <strong>Empresa:</strong> {getEmpresaNombre(sw.empresa_id)}
+              </div>
+              <div>
+                <strong>Dispositivo:</strong> {sw.dispositivo}
+              </div>
+              <div>
+                <strong>Ubicación:</strong> {sw.ubicacion}
+              </div>
+              <div>
+                <strong>Estado:</strong>{" "}
+                {sw.encendido ? "Encendido ✅" : "Apagado ❌"}
+              </div>
+              <div>
+                <strong>Pares Panel:</strong>{" "}
+                {Math.ceil(sw.switches_individuales.length / 2)}
+              </div>
               <div>
                 <strong>Switches Individuales:</strong>
                 {sw.switches_individuales.map((swi) => (
@@ -248,13 +306,19 @@ export default function Switches() {
         {modalOpen && switchEdit && (
           <div className="fixed inset-0 flex items-center justify-center z-50">
             <div
-              className={`absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity ${closing ? "opacity-0" : "opacity-100"}`}
+              className={`absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity ${
+                closing ? "opacity-0" : "opacity-100"
+              }`}
             ></div>
 
             <div
-              className={`relative bg-white rounded-xl p-6 w-11/12 max-w-md shadow-lg z-10 ${closing ? "animate-modal-out" : "animate-modal-in"}`}
+              className={`relative bg-white rounded-xl p-6 w-11/12 max-w-md shadow-lg z-10 ${
+                closing ? "animate-modal-out" : "animate-modal-in"
+              }`}
             >
-              <h2 className="text-xl font-bold mb-4">{switchEdit.id ? "Editar Switch" : "Nuevo Switch"}</h2>
+              <h2 className="text-xl font-bold mb-4">
+                {switchEdit.id ? "Editar Switch" : "Nuevo Switch"}
+              </h2>
 
               {/* Empresa */}
               <div className="mb-3">
@@ -267,7 +331,9 @@ export default function Switches() {
                 >
                   <option value="">Selecciona empresa</option>
                   {empresas.map((e) => (
-                    <option key={e.id} value={e.id}>{e.nombre}</option>
+                    <option key={e.id} value={e.id}>
+                      {e.nombre}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -275,7 +341,9 @@ export default function Switches() {
               {/* Campos */}
               {["dispositivo", "ubicacion"].map((field) => (
                 <div className="mb-3" key={field}>
-                  <label className="block mb-1 font-semibold">{field.charAt(0).toUpperCase() + field.slice(1)}</label>
+                  <label className="block mb-1 font-semibold">
+                    {field.charAt(0).toUpperCase() + field.slice(1)}
+                  </label>
                   <input
                     type="text"
                     name={field}
@@ -286,28 +354,100 @@ export default function Switches() {
                 </div>
               ))}
 
+              {/* Encendido */}
+              <div className="mb-3 flex items-center gap-2">
+                <label className="font-semibold">Encendido</label>
+                <input
+                  type="checkbox"
+                  checked={!!switchEdit.encendido}
+                  onChange={(e) =>
+                    setSwitchEdit({
+                      ...switchEdit,
+                      encendido: e.target.checked,
+                    })
+                  }
+                />
+              </div>
+
               {/* Switches individuales */}
               <div className="mb-4">
                 <h3 className="font-semibold mb-2">Switches Individuales</h3>
                 {switchEdit.switches_individuales.map((swi, index) => (
                   <div key={index} className="flex gap-2 mb-2">
-                    <input type="text" placeholder="Nombre" value={swi.nombre} onChange={(e) => handleIndividualChange(index, "nombre", e.target.value)} className="w-1/4 p-2 border rounded" />
-                    <input type="text" placeholder="Ubicación" value={swi.ubicacion} onChange={(e) => handleIndividualChange(index, "ubicacion", e.target.value)} className="w-1/4 p-2 border rounded" />
-                    <input type="text" placeholder="Pin" value={swi.pinSensor} onChange={(e) => handleIndividualChange(index, "pinSensor", e.target.value)} className="w-1/4 p-2 border rounded" />
-                    <input type="text" placeholder="Tipo" value={swi.tipo} onChange={(e) => handleIndividualChange(index, "tipo", e.target.value)} className="w-1/4 p-2 border rounded" />
-                    <button onClick={() => removeIndividual(index)} className="px-2 py-1 bg-[#bc4749] text-white rounded hover:bg-[#A63D3F]">X</button>
+                    <input
+                      type="text"
+                      placeholder="Nombre"
+                      value={swi.nombre}
+                      onChange={(e) =>
+                        handleIndividualChange(index, "nombre", e.target.value)
+                      }
+                      className="w-1/4 p-2 border rounded"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Ubicación"
+                      value={swi.ubicacion}
+                      onChange={(e) =>
+                        handleIndividualChange(index, "ubicacion", e.target.value)
+                      }
+                      className="w-1/4 p-2 border rounded"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Pin"
+                      value={swi.pinSensor}
+                      onChange={(e) =>
+                        handleIndividualChange(index, "pinSensor", e.target.value)
+                      }
+                      className="w-1/4 p-2 border rounded"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Tipo"
+                      value={swi.tipo}
+                      onChange={(e) =>
+                        handleIndividualChange(index, "tipo", e.target.value)
+                      }
+                      className="w-1/4 p-2 border rounded"
+                    />
+                    <button
+                      onClick={() => removeIndividual(index)}
+                      className="px-2 py-1 bg-[#bc4749] text-white rounded hover:bg-[#A63D3F]"
+                    >
+                      X
+                    </button>
                   </div>
                 ))}
-                <button onClick={addIndividual} className="px-4 py-2 bg-[#a7c957] text-white rounded hover:bg-[#6a994e]">+ Agregar Individual</button>
+                <button
+                  onClick={addIndividual}
+                  className="px-4 py-2 bg-[#a7c957] text-white rounded hover:bg-[#6a994e]"
+                >
+                  + Agregar Individual
+                </button>
               </div>
 
               {/* Botones modal */}
               <div className="flex justify-end space-x-2">
-                <button onClick={closeModal} className="px-4 py-2 rounded-full border hover:bg-gray-100 transition-colors">Cancelar</button>
+                <button
+                  onClick={closeModal}
+                  className="px-4 py-2 rounded-full border hover:bg-gray-100 transition-colors"
+                >
+                  Cancelar
+                </button>
                 {switchEdit?.id && (
-                  <button onClick={handleDelete} className="px-4 py-2 rounded-full bg-[#bc4749] text-white hover:bg-[#A63D3F] transition-colors">Eliminar</button>
+                  <button
+                    onClick={handleDelete}
+                    className="px-4 py-2 rounded-full bg-[#bc4749] text-white hover:bg-[#A63D3F] transition-colors"
+                  >
+                    Eliminar
+                  </button>
                 )}
-                <button onClick={handleSave} className="px-4 py-2 rounded-full bg-[#a7c957] text-white hover:bg-[#6a994e] transition-colors">Guardar</button>
+                <button
+                  onClick={handleSave}
+                  className="px-4 py-2 rounded-full bg-[#a7c957] text-white hover:bg-[#6a994e] transition-colors"
+                >
+                  Guardar
+                </button>
               </div>
             </div>
           </div>

@@ -69,11 +69,10 @@ export default function Dispositivos() {
       return;
     }
 
-    // Convertir estado a boolean
     const estadoBoolean = dispositivoEdit.estado === "activo" || dispositivoEdit.estado === true;
 
     if (dispositivoEdit.id) {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("dispositivos")
         .update({
           nombre: dispositivoEdit.nombre,
@@ -82,23 +81,53 @@ export default function Dispositivos() {
           empresa_id: dispositivoEdit.empresa_id,
           updated_at: new Date(),
         })
-        .eq("id", dispositivoEdit.id);
+        .eq("id", dispositivoEdit.id)
+        .select(`
+          id,
+          nombre,
+          tipo,
+          estado,
+          created_at,
+          updated_at,
+          empresa_id,
+          empresas:empresa_id (nombre)
+        `) // 👈 trae también la relación
+        .single();
 
-      if (error) console.error("Error actualizando:", error);
+      if (error) {
+        console.error("Error actualizando:", error);
+      } else {
+        setDispositivos((prev) => prev.map((d) => (d.id === data.id ? data : d)));
+        closeModal();
+      }
     } else {
-      const { error } = await supabase.from("dispositivos").insert([
-        {
+      const { data, error } = await supabase
+        .from("dispositivos")
+        .insert([{
           nombre: dispositivoEdit.nombre,
           tipo: dispositivoEdit.tipo,
           estado: estadoBoolean,
           empresa_id: dispositivoEdit.empresa_id,
-        },
-      ]);
+        }])
+        .select(`
+          id,
+          nombre,
+          tipo,
+          estado,
+          created_at,
+          updated_at,
+          empresa_id,
+          empresas:empresa_id (nombre)
+        `) // 👈 trae también la relación
+        .single();
 
-      if (error) console.error("Error insertando:", error);
+      if (error) {
+        console.error("Error insertando:", error);
+      } else {
+        setDispositivos((prev) => [...prev, data]);
+        closeModal();
+      }
     }
-
-    window.location.reload();
   };
 
   // Eliminar
@@ -109,8 +138,12 @@ export default function Dispositivos() {
         .delete()
         .eq("id", dispositivoEdit.id);
 
-      if (error) console.error("Error eliminando:", error);
-      else window.location.reload();
+      if (error) {
+        console.error("Error eliminando:", error);
+      } else {
+        setDispositivos(dispositivos.filter((d) => d.id !== dispositivoEdit.id));
+        closeModal();
+      }
     }
   };
 
