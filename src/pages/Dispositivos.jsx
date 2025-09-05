@@ -8,14 +8,12 @@ export default function Dispositivos() {
   const [dispositivoEdit, setDispositivoEdit] = useState(null);
   const [closing, setClosing] = useState(false);
 
-  // Mapa para mostrar nombres legibles
   const tipoLabels = {
     shelly_1: "Shelly 1",
     shelly_pro3m: "Shelly Pro 3M",
     otro: "Otro",
   };
 
-  // Cargar dispositivos y empresas
   useEffect(() => {
     const fetchData = async () => {
       const { data: empresasData } = await supabase
@@ -43,17 +41,15 @@ export default function Dispositivos() {
     fetchData();
   }, []);
 
-  // Abrir modal
   const openModal = (dispositivo = null) => {
     setDispositivoEdit(
       dispositivo
-        ? { ...dispositivo, empresa_id: dispositivo.empresa_id }
+        ? { ...dispositivo, empresa_id: dispositivo.empresa_id?.toString() || "" }
         : { id: null, nombre: "", tipo: "shelly_1", estado: true, empresa_id: "" }
     );
     setModalOpen(true);
   };
 
-  // Cerrar modal con animación
   const closeModal = () => {
     setClosing(true);
     setTimeout(() => {
@@ -62,7 +58,6 @@ export default function Dispositivos() {
     }, 200);
   };
 
-  // Guardar (insertar o actualizar)
   const handleSave = async () => {
     if (!dispositivoEdit.nombre || !dispositivoEdit.tipo || !dispositivoEdit.empresa_id) {
       alert("Completa todos los campos obligatorios");
@@ -91,12 +86,11 @@ export default function Dispositivos() {
           updated_at,
           empresa_id,
           empresas:empresa_id (nombre)
-        `) // 👈 trae también la relación
+        `)
         .single();
 
-      if (error) {
-        console.error("Error actualizando:", error);
-      } else {
+      if (error) console.error("Error actualizando:", error);
+      else {
         setDispositivos((prev) => prev.map((d) => (d.id === data.id ? data : d)));
         closeModal();
       }
@@ -118,19 +112,17 @@ export default function Dispositivos() {
           updated_at,
           empresa_id,
           empresas:empresa_id (nombre)
-        `) // 👈 trae también la relación
+        `)
         .single();
 
-      if (error) {
-        console.error("Error insertando:", error);
-      } else {
+      if (error) console.error("Error insertando:", error);
+      else {
         setDispositivos((prev) => [...prev, data]);
         closeModal();
       }
     }
   };
 
-  // Eliminar
   const handleDelete = async () => {
     if (window.confirm("¿Eliminar este dispositivo?")) {
       const { error } = await supabase
@@ -138,9 +130,8 @@ export default function Dispositivos() {
         .delete()
         .eq("id", dispositivoEdit.id);
 
-      if (error) {
-        console.error("Error eliminando:", error);
-      } else {
+      if (error) console.error("Error eliminando:", error);
+      else {
         setDispositivos(dispositivos.filter((d) => d.id !== dispositivoEdit.id));
         closeModal();
       }
@@ -286,7 +277,7 @@ export default function Dispositivos() {
                 >
                   <option value="">Selecciona una empresa</option>
                   {empresas.map((e) => (
-                    <option key={e.id} value={e.id}>
+                    <option key={e.id} value={e.id.toString()}>
                       {e.nombre}
                     </option>
                   ))}
