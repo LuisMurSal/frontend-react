@@ -207,13 +207,61 @@ export default function Empresa() {
                 />
               </div>
 
-              <div className="flex justify-end space-x-2">
+              <div className="flex justify-end space-x-2 mt-4">
                 <button
                   onClick={closeModal}
                   className="px-4 py-2 rounded-full border hover:bg-gray-100 transition-colors"
                 >
                   Cancelar
                 </button>
+
+                {empresaEdit.id && (
+                  <>
+                    <button
+                      onClick={async () => {
+                        if (window.confirm("¿Seguro quieres suspender esta empresa?")) {
+                          try {
+                            const { data, error } = await supabase
+                              .from("empresas")
+                              .update({ activo: false }) // o vencimiento: null si usas ese campo
+                              .eq("id", empresaEdit.id)
+                              .select();
+                            if (error) throw error;
+                            setEmpresas(empresas.map(e => e.id === empresaEdit.id ? data[0] : e));
+                            closeModal();
+                          } catch (err) {
+                            console.error("Error suspendiendo empresa:", err);
+                          }
+                        }
+                      }}
+                      className="px-4 py-2 rounded-full bg-yellow-500 text-white hover:bg-yellow-600 transition-colors"
+                    >
+                      Suspender
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        if (window.confirm("¿Seguro quieres eliminar esta empresa?")) {
+                          try {
+                            const { error } = await supabase
+                              .from("empresas")
+                              .delete()
+                              .eq("id", empresaEdit.id);
+                            if (error) throw error;
+                            setEmpresas(empresas.filter(e => e.id !== empresaEdit.id));
+                            closeModal();
+                          } catch (err) {
+                            console.error("Error eliminando empresa:", err);
+                          }
+                        }
+                      }}
+                      className="px-4 py-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
+                    >
+                      Eliminar
+                    </button>
+                  </>
+                )}
+
                 <button
                   onClick={handleSave}
                   className="px-4 py-2 rounded-full bg-[#a7c957] text-white hover:bg-[#6a994e] transition-colors"

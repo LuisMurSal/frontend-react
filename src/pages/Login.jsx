@@ -64,8 +64,8 @@ export default function Login() {
         case "empresa":
           navigate("/dashboard-empresa");
           break;
-        case "cliente":
-          navigate("/dashboard-cliente");
+        case "usuario":
+          navigate("/dashboard-usuario");
           break;
         default:
           setError("Rol desconocido");

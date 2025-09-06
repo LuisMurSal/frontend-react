@@ -3,15 +3,13 @@ import { useState } from "react";
 
 import Login from "./pages/Login";
 import DashboardAdmin from "./pages/DashboardAdmin";
-import DashboardCliente from "./pages/DashboardCliente";
+import DashboardUsuario from "./pages/DashboardUsuario";
 import DashboardEmpresa from "./pages/DashboardEmpresa";
 import Empresa from "./pages/Empresas";
 import Usuarios from "./pages/Usuarios";
 import Sidebar from "./components/Sidebar";
 import Switches from "./pages/Switches";
 import Dispositivos from "./pages/Dispositivos";
-
-
 
 // Ruta privada según rol
 function PrivateRoute({ children, roles }) {
@@ -22,7 +20,7 @@ function PrivateRoute({ children, roles }) {
   if (roles && !roles.includes(user.role)) {
     switch(user.role) {
       case "admin": return <Navigate to="/dashboard-admin" />;
-      case "cliente": return <Navigate to="/dashboard-cliente" />;
+      case "usuario": return <Navigate to="/dashboard-usuario" />;
       case "empresa": return <Navigate to="/dashboard-empresa" />;
       default: return <Navigate to="/" />;
     }
@@ -30,7 +28,6 @@ function PrivateRoute({ children, roles }) {
 
   return children;
 }
-
 
 // Layout que incluye el sidebar
 function ProtectedLayout({ children, isCollapsed, setIsCollapsed, isOpen, setIsOpen }) {
@@ -73,21 +70,23 @@ function App() {
             </PrivateRoute>
           } 
         />
+
         <Route 
-          path="/dashboard-cliente" 
+          path="/dashboard-usuario" 
           element={
-            <PrivateRoute role="cliente">
+            <PrivateRoute role="usuario">
               <ProtectedLayout 
                 isCollapsed={isCollapsed} 
                 setIsCollapsed={setIsCollapsed} 
                 isOpen={isOpen} 
                 setIsOpen={setIsOpen}
               >
-                <DashboardCliente />
+                <DashboardUsuario />
               </ProtectedLayout>
             </PrivateRoute>
           } 
         />
+
         <Route 
           path="/dashboard-empresa" 
           element={
@@ -103,6 +102,7 @@ function App() {
             </PrivateRoute>
           } 
         />
+
         <Route 
           path="/empresas" 
           element={
@@ -118,6 +118,7 @@ function App() {
             </PrivateRoute>
           } 
         />
+
         <Route 
           path="/usuarios" 
           element={
@@ -133,6 +134,7 @@ function App() {
             </PrivateRoute>
           } 
         />
+
         <Route 
           path="/switches" 
           element={
@@ -148,6 +150,7 @@ function App() {
             </PrivateRoute>
           } 
         />
+
         <Route 
           path="/dispositivos" 
           element={
@@ -163,6 +166,7 @@ function App() {
             </PrivateRoute>
           } 
         />
+
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>

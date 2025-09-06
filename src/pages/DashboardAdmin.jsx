@@ -19,8 +19,8 @@ export default function DashboardAdmin() {
     if (!user) return navigate("/");
     if (user.role !== "admin") {
       switch (user.role) {
-        case "cliente":
-          navigate("/dashboard-cliente");
+        case "usuario":
+          navigate("/dashboard-usuario");
           break;
         case "empresa":
           navigate("/dashboard-empresa");

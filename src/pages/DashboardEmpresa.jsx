@@ -2,7 +2,7 @@ import { LayoutDashboard, Users, Box, Server, Calendar, Power, PowerOff, Refresh
 
 export default function DashboardEmpresa() {
   const stats = [
-    { label: "Clientes", value: 10, icon: Users, bg: "bg-[#a7c957]" },
+    { label: "Usuarios", value: 10, icon: Users, bg: "bg-[#a7c957]" },
     { label: "Productos disponibles", value: 20, icon: Box, bg: "bg-[#6a994e]" },
     { label: "Ingresos totales", value: "$5,600", icon: Box, bg: "bg-[#f2e8cf] text-[#4f772d]" },
   ]
@@ -108,7 +108,7 @@ export default function DashboardEmpresa() {
         <div className="mt-8">
           <h2 className="text-xl font-semibold mb-4">Últimas Actividades</h2>
           <div className="bg-white p-4 rounded-xl shadow-md">
-            <p className="text-gray-600">Aquí puedes mostrar la actividad de tus clientes y productos.</p>
+            <p className="text-gray-600">Aquí puedes mostrar la actividad de tus usuarios y productos.</p>
           </div>
         </div>
       </main>

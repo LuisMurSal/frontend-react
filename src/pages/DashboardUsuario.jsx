@@ -4,7 +4,7 @@ import { Box } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { supabase } from "../services/supabase";
 
-export default function DashboardCliente() {
+export default function DashboardUsuario() {
   const navigate = useNavigate();
   const [stats, setStats] = useState([]);
   const [dispositivosActivos, setDispositivosActivos] = useState([]);
@@ -15,7 +15,7 @@ export default function DashboardCliente() {
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) return navigate("/");
-    if (user.role !== "cliente") {
+    if (user.role !== "usuario") {
       switch (user.role) {
         case "admin":
           navigate("/dashboard-admin");
@@ -34,7 +34,7 @@ export default function DashboardCliente() {
       const user = JSON.parse(localStorage.getItem("user"));
       if (!user) return;
 
-      // Obtener dispositivos asignados a la empresa del cliente
+      // Obtener dispositivos asignados a la empresa del usuario
       const { data: dispositivosData, error: dispositivosError } = await supabase
         .from("dispositivos")
         .select("*")
@@ -73,7 +73,7 @@ export default function DashboardCliente() {
   return (
     <div className="flex min-h-screen bg-gray-100">
       <main className="flex-1 p-6">
-        <h1 className="text-3xl font-bold mb-6">Bienvenido, Cliente</h1>
+        <h1 className="text-3xl font-bold mb-6">Bienvenido, Usuario</h1>
 
         {/* Cards de estadísticas */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

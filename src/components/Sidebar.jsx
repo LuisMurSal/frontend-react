@@ -26,24 +26,23 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isOpen, setIsOpen
      flex items-center px-4 py-3 rounded-xl transition-all duration-300 overflow-hidden
      ${isCollapsed ? 'justify-center' : 'space-x-3 justify-start'}`
 
-  // Obtenemos el usuario desde localStorage
   const user = JSON.parse(localStorage.getItem("user"))
 
-  // Todos los links posibles
   const allLinks = [
     { 
-      to: user?.role === 'admin' ? '/dashboard-admin' : user?.role === 'empresa' ? '/dashboard-empresa' : '/dashboard-cliente', 
+      to: user?.role === 'admin' ? '/dashboard-admin' 
+          : user?.role === 'empresa' ? '/dashboard-empresa' 
+          : '/dashboard-usuario',  // <- Cambiado
       icon: LayoutDashboard, 
       label: 'Dashboard', 
-      roles: ['admin','empresa','cliente'] 
+      roles: ['admin','empresa','usuario'] 
     },
     { to: '/empresas', icon: Users, label: 'Empresas', roles: ['admin'] },
-    { to: '/dispositivos', icon: Cpu, label: 'Dispositivos', roles: ['admin','cliente','empresa'] },
-    { to: '/switches', icon: Server, label: 'Switches', roles: ['admin','cliente'] },
+    { to: '/dispositivos', icon: Cpu, label: 'Dispositivos', roles: ['admin','usuario','empresa'] },
+    { to: '/switches', icon: Server, label: 'Switches', roles: ['admin','usuario'] },
     { to: '/usuarios', icon: Users, label: 'Usuarios', roles: ['admin','empresa'] }
   ]
 
-  // Filtramos según rol
   const links = allLinks.filter(link => link.roles.includes(user?.role))
 
   return (
@@ -134,12 +133,10 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, isOpen, setIsOpen
             "
           >
             {!closing && <LogOut className="w-5 h-5" />}
-
             {!isCollapsed && (
               <span className="flex items-center space-x-2 transition-opacity duration-300">
                 {closing ? (
                   <>
-                    {/* Spinner circular */}
                     <svg
                       className="w-4 h-4 animate-spin text-white"
                       xmlns="http://www.w3.org/2000/svg"
