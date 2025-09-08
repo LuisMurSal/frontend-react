@@ -62,7 +62,6 @@ export default function DashboardAdmin() {
       else {
         const switchesEncendidos = dispositivosData.filter(d => d.estado).length;
 
-        // Generar datos agrupados por hora
         const dispositivosPorHora = dispositivosData.map(d => ({
           hora: new Date(d.created_at).getHours() + ":00",
           dispositivos: 1,
@@ -162,7 +161,7 @@ export default function DashboardAdmin() {
               {ultimosUsuarios.slice(0, 3).map(u => (
                 <li key={u.id} className="border-b pb-1 border-gray-300">
                   <p className="font-medium">{u.nombre}</p>
-                  <p className="text-sm text-gray-500">{u.correo}</p>
+                  <p className="text-sm text-gray-500">{u.email}</p>
                 </li>
               ))}
             </ul>
@@ -174,7 +173,7 @@ export default function DashboardAdmin() {
               {ultimasEmpresas.slice(0, 3).map(e => (
                 <li key={e.id} className="border-b pb-1 border-gray-300">
                   <p className="font-medium">{e.nombre}</p>
-                  {e.correo && <p className="text-sm text-gray-500">{e.correo}</p>}
+                  {e.email && <p className="text-sm text-gray-500">{e.email}</p>}
                 </li>
               ))}
             </ul>

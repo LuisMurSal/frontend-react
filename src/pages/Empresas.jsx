@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../services/supabase";
+import ModalEmpresas from "../components/ModalEmpresas";
 
 export default function Empresa() {
   const [empresas, setEmpresas] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [empresaEdit, setEmpresaEdit] = useState(null);
-  const [closing, setClosing] = useState(false);
 
   // --- Fetch empresas desde Supabase ---
   useEffect(() => {
@@ -17,7 +17,7 @@ export default function Empresa() {
     fetchEmpresas();
   }, []);
 
-  const openModal = (empresa) => {
+  const openModal = (empresa = null) => {
     setEmpresaEdit(
       empresa
         ? { ...empresa }
@@ -26,50 +26,16 @@ export default function Empresa() {
     setModalOpen(true);
   };
 
-  const closeModal = () => {
-    setClosing(true);
-    setTimeout(() => {
-      setModalOpen(false);
-      setClosing(false);
-    }, 200);
-  };
+  const closeModal = () => setModalOpen(false);
 
-  const handleChange = (e) => {
-    setEmpresaEdit({ ...empresaEdit, [e.target.name]: e.target.value });
-  };
-
-  const handleSave = async () => {
-    if (empresaEdit.id) {
-      // Editar empresa
-      const { data, error } = await supabase
-        .from("empresas")
-        .update({
-          nombre: empresaEdit.nombre,
-          telefono: empresaEdit.telefono,
-          correo: empresaEdit.correo,
-          vencimiento: empresaEdit.vencimiento,
-        })
-        .eq("id", empresaEdit.id)
-        .select();
-      if (error) console.error("Error updating empresa:", error);
-      else {
-        setEmpresas(empresas.map((e) => (e.id === empresaEdit.id ? data[0] : e)));
-      }
+  const handleSave = (updatedEmpresa) => {
+    // Actualiza el array de empresas según si es nueva o editada
+    if (updatedEmpresa.id) {
+      setEmpresas(
+        empresas.map((e) => (e.id === updatedEmpresa.id ? updatedEmpresa : e))
+      );
     } else {
-      // Crear nueva empresa
-      const { data, error } = await supabase
-        .from("empresas")
-        .insert([
-          {
-            nombre: empresaEdit.nombre,
-            telefono: empresaEdit.telefono,
-            correo: empresaEdit.correo,
-            vencimiento: empresaEdit.vencimiento,
-          },
-        ])
-        .select();
-      if (error) console.error("Error creating empresa:", error);
-      else setEmpresas([...empresas, data[0]]);
+      setEmpresas([...empresas, updatedEmpresa]);
     }
     closeModal();
   };
@@ -81,7 +47,7 @@ export default function Empresa() {
           <h1 className="text-3xl font-bold">Empresas</h1>
           <div className="mt-3 md:mt-0 md:flex md:justify-end">
             <button
-              onClick={() => openModal(null)}
+              onClick={() => openModal()}
               className="px-4 py-2 rounded-full bg-[#a7c957] text-white hover:bg-[#6a994e] transition-colors"
             >
               Nueva empresa
@@ -127,12 +93,25 @@ export default function Empresa() {
         {/* Mobile Cards */}
         <div className="md:hidden flex flex-col gap-4">
           {empresas.map((e) => (
-            <div key={e.id} className="bg-white p-4 rounded-xl shadow-md flex flex-col gap-2">
-              <div><strong>ID:</strong> {e.id}</div>
-              <div><strong>Nombre:</strong> {e.nombre}</div>
-              <div><strong>Teléfono:</strong> {e.telefono}</div>
-              <div><strong>Correo:</strong> {e.correo}</div>
-              <div><strong>Vencimiento:</strong> {e.vencimiento}</div>
+            <div
+              key={e.id}
+              className="bg-white p-4 rounded-xl shadow-md flex flex-col gap-2"
+            >
+              <div>
+                <strong>ID:</strong> {e.id}
+              </div>
+              <div>
+                <strong>Nombre:</strong> {e.nombre}
+              </div>
+              <div>
+                <strong>Teléfono:</strong> {e.telefono}
+              </div>
+              <div>
+                <strong>Correo:</strong> {e.correo}
+              </div>
+              <div>
+                <strong>Vencimiento:</strong> {e.vencimiento}
+              </div>
               <div className="flex justify-end mt-2">
                 <button
                   onClick={() => openModal(e)}
@@ -146,110 +125,12 @@ export default function Empresa() {
         </div>
 
         {/* Modal */}
-        {modalOpen && (
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div
-              className={`absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity ${
-                closing ? "opacity-0" : "opacity-100"
-              }`}
-            ></div>
-
-            <div
-              className={`relative bg-white rounded-xl p-6 w-11/12 max-w-md shadow-lg z-10 ${
-                closing ? "animate-modal-out" : "animate-modal-in"
-              }`}
-            >
-              <h2 className="text-xl font-bold mb-4">
-                {empresaEdit.id ? "Editar Empresa" : "Nueva Empresa"}
-              </h2>
-
-              <div className="mb-3">
-                <label className="block mb-1 font-semibold">Nombre</label>
-                <input
-                  type="text"
-                  name="nombre"
-                  value={empresaEdit.nombre}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-
-              <div className="mb-3">
-                <label className="block mb-1 font-semibold">Teléfono</label>
-                <input
-                  type="text"
-                  name="telefono"
-                  value={empresaEdit.telefono}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-
-              <div className="mb-3">
-                <label className="block mb-1 font-semibold">Correo</label>
-                <input
-                  type="email"
-                  name="correo"
-                  value={empresaEdit.correo}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-
-              <div className="mb-3">
-                <label className="block mb-1 font-semibold">Vencimiento</label>
-                <input
-                  type="date"
-                  name="vencimiento"
-                  value={empresaEdit.vencimiento}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2 mt-4">
-                <button
-                  onClick={closeModal}
-                  className="px-4 py-2 rounded-full border hover:bg-gray-100 transition-colors"
-                >
-                  Cancelar
-                </button>
-
-                {empresaEdit.id && (
-                  <>
-                    <button
-                      onClick={async () => {
-                        if (window.confirm("¿Seguro quieres eliminar esta empresa?")) {
-                          try {
-                            const { error } = await supabase
-                              .from("empresas")
-                              .delete()
-                              .eq("id", empresaEdit.id);
-                            if (error) throw error;
-                            setEmpresas(empresas.filter(e => e.id !== empresaEdit.id));
-                            closeModal();
-                          } catch (err) {
-                            console.error("Error eliminando empresa:", err);
-                          }
-                        }
-                      }}
-                      className="px-4 py-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
-                    >
-                      Eliminar
-                    </button>
-                  </>
-                )}
-
-                <button
-                  onClick={handleSave}
-                  className="px-4 py-2 rounded-full bg-[#a7c957] text-white hover:bg-[#6a994e] transition-colors"
-                >
-                  Guardar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <ModalEmpresas
+          isOpen={modalOpen}
+          empresa={empresaEdit}
+          onClose={closeModal}
+          onSave={handleSave}
+        />
       </main>
     </div>
   );
